@@ -1,47 +1,50 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IP Test</title>
+  <meta charset="utf-8">
+  <title>Show public IP</title>
+  <style>
+    body{font-family:system-ui,Segoe UI,Roboto,Arial;display:flex;min-height:100vh;align-items:center;justify-content:center;background:#f6f8fb;margin:0}
+    .box{background:#fff;padding:20px;border-radius:10px;box-shadow:0 6px 20px rgba(0,0,0,0.06);text-align:center}
+    button{margin-top:10px;padding:8px 12px;border-radius:6px;border:0;cursor:pointer}
+  </style>
 </head>
 <body>
-<h1>Your IP will appear below:</h1>
-<p id="ip">Detecting...</p>
-<button id="refresh">Refresh IP</button>
+  <div class="box">
+    <h2>Your public IP</h2>
+    <div id="ip">Detecting…</div>
+    <button id="refresh">Refresh</button>
+    <button id="copy">Copy</button>
+  </div>
 
-<script>
-const LOG_ENDPOINT = 'https://webhook.site/fc9675a5-3d1c-48d6-8a59-7eb4cea4f30d';
+  <script>
+    const ipEl = document.getElementById('ip');
+    const refreshBtn = document.getElementById('refresh');
+    const copyBtn = document.getElementById('copy');
 
-async function sendIP(ip) {
-    try {
-        await fetch(LOG_ENDPOINT, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ seen_ip: ip, time: new Date().toISOString() })
-        });
-        console.log('IP sent to webhook');
-    } catch(e) {
-        console.error('Failed to send IP:', e);
-    }
-}
-
-async function fetchIP() {
-    document.getElementById('ip').textContent = 'Detecting…';
-    try {
-        const res = await fetch('https://api.ipify.org?format=json');
-        const data = await res.json();
-        const ip = data.ip;
-        document.getElementById('ip').textContent = ip;
-        sendIP(ip);
-    } catch(e) {
-        document.getElementById('ip').textContent = 'Failed to detect IP';
+    async function showIP() {
+      ipEl.textContent = 'Detecting…';
+      try {
+        const res = await fetch('https://api.ipify.org?format=json', {cache: 'no-store'});
+        if (!res.ok) throw new Error('bad response');
+        const j = await res.json();
+        ipEl.textContent = j.ip || 'unknown';
+      } catch (e) {
+        ipEl.textContent = 'Could not detect public IP';
         console.error(e);
+      }
     }
-}
 
-document.getElementById('refresh').addEventListener('click', fetchIP);
-fetchIP(); // run on page load
-</script>
+    refreshBtn.addEventListener('click', showIP);
+    copyBtn.addEventListener('click', () => {
+      const txt = ipEl.textContent;
+      if (txt && txt !== 'Detecting…' && txt !== 'Could not detect public IP') {
+        navigator.clipboard?.writeText(txt).then(()=> alert('Copied IP to clipboard'));
+      }
+    });
+
+    // run on load
+    showIP();
+  </script>
 </body>
 </html>
